@@ -195,11 +195,6 @@ public class H264VideoStream2 extends MediaStream {
     Log.d(TAG, "Video encoded using the MediaRecorderAPI");
     Codec[] encoders = CodecManager.findEncodersForMimeType(MIME_TYPE);
 
-    MP4Config config = new MP4Config("/sdcard/hello.mp4");
-    ((H264Packetizer)mPacketizer).setStreamParameters(
-        Base64.decode(config.getB64PPS(), Base64.NO_WRAP),
-        Base64.decode(config.getB64SPS(), Base64.NO_WRAP));
-
     createSockets();
 
     try {

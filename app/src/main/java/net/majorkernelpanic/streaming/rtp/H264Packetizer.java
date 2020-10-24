@@ -41,7 +41,7 @@ public class H264Packetizer extends AbstractPacketizer implements Runnable {
 	private long delay = 0, oldtime = 0;
 	private Statistics stats = new Statistics();
 	private byte[] sps = null, pps = null, stapa = null;
-	byte[] header = new byte[5];	
+	byte[] header = new byte[5];
 	private int count = 0;
 	private int streamType = 1;
 
@@ -187,9 +187,18 @@ public class H264Packetizer extends AbstractPacketizer implements Runnable {
 			}
 		}
 
+		if (stapa == null) {
+			if (MediaCodecInputStream.sSPS != null && MediaCodecInputStream.sPPS != null) {
+			  Log.e(TAG, "Set parameters.");
+				setStreamParameters(MediaCodecInputStream.sPPS,
+						MediaCodecInputStream.sSPS);
+			}
+		}
+
 		// We send two packets containing NALU type 7 (SPS) and 8 (PPS)
 		// Those should allow the H264 stream to be decoded even if no SDP was sent to the decoder.
 		if (type == 5 && sps != null && pps != null) {
+			Log.e(TAG, "Write stapa...");
 			buffer = socket.requestBuffer();
 			socket.markNextPacket();
 			socket.updateTimestamp(ts);

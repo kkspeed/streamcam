@@ -62,9 +62,7 @@ public class MediaCodecInputStream extends InputStream {
 		return 0;
 	}
 
-	private FileOutputStream fout;
-
-	private byte[] spsPpsInfo;
+	public static byte[] sSPS, sPPS;
 
 	@Override
 	public int read(byte[] buffer, int offset, int length) throws IOException {
@@ -95,6 +93,18 @@ public class MediaCodecInputStream extends InputStream {
 			}
 
 			if (mClosed) throw new IOException("This InputStream was closed");
+
+			if (sPPS == null && sSPS == null) {
+				MediaFormat format = mMediaCodec.getOutputFormat();
+				ByteBuffer spsb = format.getByteBuffer("csd-0");
+				ByteBuffer ppsb = format.getByteBuffer("csd-1");
+				sSPS = new byte[spsb.capacity()-4];
+				spsb.position(4);
+				spsb.get(sSPS,0,sSPS.length);
+				sPPS = new byte[ppsb.capacity()-4];
+				ppsb.position(4);
+				ppsb.get(sPPS,0,sPPS.length);
+			}
 
 			min = length < mBufferInfo.size - mBuffer.position() ? length : mBufferInfo.size - mBuffer.position();
 			mBuffer.get(buffer, offset, min);
