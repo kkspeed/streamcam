@@ -18,6 +18,8 @@
 
 package net.majorkernelpanic.streaming.video;
 
+import android.content.Context;
+import android.hardware.camera2.CameraCharacteristics;
 import java.io.IOException;
 import net.majorkernelpanic.streaming.SessionBuilder;
 import net.majorkernelpanic.streaming.rtp.H263Packetizer;
@@ -40,8 +42,8 @@ public class H263Stream extends VideoStream {
 	 * Uses CAMERA_FACING_BACK by default.
 	 * @throws IOException
 	 */
-	public H263Stream() throws IOException {
-		this(CameraInfo.CAMERA_FACING_BACK);
+	public H263Stream(Context context) throws IOException {
+		this(CameraCharacteristics.LENS_FACING_BACK, context);
 	}	
 
 	/**
@@ -49,9 +51,9 @@ public class H263Stream extends VideoStream {
 	 * @param cameraId Can be either CameraInfo.CAMERA_FACING_BACK or CameraInfo.CAMERA_FACING_FRONT 
 	 * @throws IOException
 	 */	
-	public H263Stream(int cameraId) {
-		super(cameraId);
-		mCameraImageFormat = ImageFormat.NV21;
+	public H263Stream(int cameraId, Context context) {
+		super(cameraId, context);
+		mMimeType = "video/3gpp";
 		mVideoEncoder = MediaRecorder.VideoEncoder.H263;
 		mPacketizer = new H263Packetizer();
 	}
@@ -68,7 +70,6 @@ public class H263Stream extends VideoStream {
 	
 	public synchronized void configure() throws IllegalStateException, IOException {
 		super.configure();
-		mMode = MODE_MEDIARECORDER_API;
 		mQuality = mRequestedQuality.clone();
 	}
 	

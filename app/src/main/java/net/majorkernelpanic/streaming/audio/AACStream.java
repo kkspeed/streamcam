@@ -141,42 +141,19 @@ public class AACStream extends AudioStream {
 		// If he did, we force a reasonable one: 16 kHz
 		if (i>12) mQuality.samplingRate = 16000;
 
-		if (mMode != mRequestedMode || mPacketizer==null) {
-			mMode = mRequestedMode;
-			if (mMode == MODE_MEDIARECORDER_API) {
-				mPacketizer = new AACADTSPacketizer();
-			} else { 
-				mPacketizer = new AACLATMPacketizer();
-			}
+		if (mPacketizer==null) {
+			mPacketizer = new AACLATMPacketizer();
 			mPacketizer.setDestination(mDestination, mRtpPort, mRtcpPort);
 			mPacketizer.getRtpSocket().setOutputStream(mOutputStream, mChannelIdentifier);
 		}
 
-		if (mMode == MODE_MEDIARECORDER_API) {
+		mProfile = 2; // AAC LC
+		mChannel = 1;
+		mConfig = (mProfile & 0x1F) << 11 | (mSamplingRateIndex & 0x0F) << 7 | (mChannel & 0x0F) << 3;
 
-			testADTS();
-
-			// All the MIME types parameters used here are described in RFC 3640
-			// SizeLength: 13 bits will be enough because ADTS uses 13 bits for frame length
-			// config: contains the object type + the sampling rate + the channel number
-
-			// TODO: streamType always 5 ? profile-level-id always 15 ?
-
-			mSessionDescription = "m=audio "+String.valueOf(getDestinationPorts()[0])+" RTP/AVP 96\r\n" +
-					"a=rtpmap:96 mpeg4-generic/"+mQuality.samplingRate+"\r\n"+
-					"a=fmtp:96 streamtype=5; profile-level-id=15; mode=AAC-hbr; config="+Integer.toHexString(mConfig)+"; SizeLength=13; IndexLength=3; IndexDeltaLength=3;\r\n";
-
-		} else {
-
-			mProfile = 2; // AAC LC
-			mChannel = 1;
-			mConfig = (mProfile & 0x1F) << 11 | (mSamplingRateIndex & 0x0F) << 7 | (mChannel & 0x0F) << 3;
-
-			mSessionDescription = "m=audio "+String.valueOf(getDestinationPorts()[0])+" RTP/AVP 96\r\n" +
-					"a=rtpmap:96 mpeg4-generic/"+mQuality.samplingRate+"\r\n"+
-					"a=fmtp:96 streamtype=5; profile-level-id=15; mode=AAC-hbr; config="+Integer.toHexString(mConfig)+"; SizeLength=13; IndexLength=3; IndexDeltaLength=3;\r\n";			
-
-		}
+		mSessionDescription = "m=audio "+String.valueOf(getDestinationPorts()[0])+" RTP/AVP 96\r\n" +
+				"a=rtpmap:96 mpeg4-generic/"+mQuality.samplingRate+"\r\n"+
+				"a=fmtp:96 streamtype=5; profile-level-id=15; mode=AAC-hbr; config="+Integer.toHexString(mConfig)+"; SizeLength=13; IndexLength=3; IndexDeltaLength=3;\r\n";
 
 	}
 
@@ -248,13 +225,11 @@ public class AACStream extends AudioStream {
 	/** Stops the stream. */
 	public synchronized void stop() {
 		if (mStreaming) {
-			if (mMode==MODE_MEDIACODEC_API) {
-				Log.d(TAG, "Interrupting threads...");
-				mThread.interrupt();
-				mAudioRecord.stop();
-				mAudioRecord.release();
-				mAudioRecord = null;
-			}
+			Log.d(TAG, "Interrupting threads...");
+			mThread.interrupt();
+			mAudioRecord.stop();
+			mAudioRecord.release();
+			mAudioRecord = null;
 			super.stop();
 		}
 	}

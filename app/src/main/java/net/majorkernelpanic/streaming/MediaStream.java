@@ -64,8 +64,7 @@ public abstract class MediaStream implements Stream {
 	/** The packetizer that will read the output of the camera and send RTP packets over the networked. */
 	protected AbstractPacketizer mPacketizer = null;
 
-	protected static byte sSuggestedMode = MODE_MEDIARECORDER_API;
-	protected byte mMode, mRequestedMode;
+	protected static byte sSuggestedMode = MODE_MEDIACODEC_API;
 
 	/** 
 	 * Starting lollipop the LocalSocket API cannot be used to feed a MediaRecorder object. 
@@ -115,8 +114,6 @@ public abstract class MediaStream implements Stream {
 	}
 
 	public MediaStream() {
-		mRequestedMode = sSuggestedMode;
-		mMode = sSuggestedMode;
 	}
 
 	/** 
@@ -196,32 +193,6 @@ public abstract class MediaStream implements Stream {
 	}
 
 	/**
-	 * Sets the streaming method that will be used.
-	 * 
-	 * If the mode is set to {@link #MODE_MEDIARECORDER_API}, raw audio/video will be encoded 
-	 * using the MediaRecorder API. <br />
-	 * 
-	 * If the mode is set to {@link #MODE_MEDIACODEC_API} or to {@link #MODE_MEDIACODEC_API_2}, 
-	 * audio/video will be encoded with using the MediaCodec. <br />
-	 * 
-	 * The {@link #MODE_MEDIACODEC_API_2} mode only concerns {@link VideoStream}, it makes 
-	 * use of the createInputSurface() method of the MediaCodec API (Android 4.3 is needed there). <br />
-	 * 
-	 * @param mode Can be {@link #MODE_MEDIARECORDER_API}, {@link #MODE_MEDIACODEC_API} or {@link #MODE_MEDIACODEC_API_2} 
-	 */
-	public void setStreamingMethod(byte mode) {
-		mRequestedMode = mode;
-	}
-
-	/**
-	 * Returns the streaming method in use, call this after 
-	 * {@link #configure()} to get an accurate response. 
-	 */
-	public byte getStreamingMethod() {
-		return mMode;
-	}		
-	
-	/**
 	 * Returns the packetizer associated with the {@link MediaStream}.
 	 * @return The packetizer
 	 */
@@ -256,7 +227,6 @@ public abstract class MediaStream implements Stream {
 			mPacketizer.setDestination(mDestination, mRtpPort, mRtcpPort);
 			mPacketizer.getRtpSocket().setOutputStream(mOutputStream, mChannelIdentifier);
 		}
-		mMode = mRequestedMode;
 		mConfigured = true;
 	}
 	
@@ -271,11 +241,7 @@ public abstract class MediaStream implements Stream {
 
 		mPacketizer.setTimeToLive(mTTL);
 		
-		if (mMode != MODE_MEDIARECORDER_API) {
-			encodeWithMediaCodec();
-		} else {
-			encodeWithMediaRecorder();
-		}
+	  encodeWithMediaCodec();
 
 	}
 
@@ -284,18 +250,10 @@ public abstract class MediaStream implements Stream {
 	public synchronized  void stop() {
 		if (mStreaming) {
 			try {
-				if (mMode==MODE_MEDIARECORDER_API) {
-					mMediaRecorder.stop();
-					mMediaRecorder.release();
-					mMediaRecorder = null;
-					closeSockets();
-					mPacketizer.stop();
-				} else {
-					mPacketizer.stop();
-					mMediaCodec.stop();
-					mMediaCodec.release();
-					mMediaCodec = null;
-				}
+				mPacketizer.stop();
+				mMediaCodec.stop();
+				mMediaCodec.release();
+				mMediaCodec = null;
 			} catch (Exception e) {
 				e.printStackTrace();
 			}	

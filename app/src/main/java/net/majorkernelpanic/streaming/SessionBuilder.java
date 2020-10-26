@@ -18,8 +18,9 @@
 
 package net.majorkernelpanic.streaming;
 
+import android.hardware.camera2.CameraCharacteristics;
+import android.util.Log;
 import java.io.IOException;
-import java.net.InetAddress;
 import net.majorkernelpanic.streaming.audio.AACStream;
 import net.majorkernelpanic.streaming.audio.AMRNBStream;
 import net.majorkernelpanic.streaming.audio.AudioQuality;
@@ -30,7 +31,6 @@ import net.majorkernelpanic.streaming.video.H264Stream;
 import net.majorkernelpanic.streaming.video.VideoQuality;
 import net.majorkernelpanic.streaming.video.VideoStream;
 import android.content.Context;
-import android.hardware.Camera.CameraInfo;
 import android.preference.PreferenceManager;
 
 /**
@@ -64,7 +64,7 @@ public class SessionBuilder {
 	private Context mContext;
 	private int mVideoEncoder = VIDEO_H263; 
 	private int mAudioEncoder = AUDIO_AMRNB;
-	private int mCamera = CameraInfo.CAMERA_FACING_BACK;
+	private int mCamera = CameraCharacteristics.LENS_FACING_BACK;
 	private int mTimeToLive = 64;
 	private int mOrientation = 0;
 	private boolean mFlash = false;
@@ -120,14 +120,16 @@ public class SessionBuilder {
 			break;
 		}
 
+		if (mContext == null) {
+			throw new IllegalStateException("Missing context.");
+		}
 		switch (mVideoEncoder) {
 		case VIDEO_H263:
-			session.addVideoTrack(new H263Stream(mCamera));
+			session.addVideoTrack(new H263Stream(mCamera, mContext));
 			break;
 		case VIDEO_H264:
-			H264Stream stream = new H264Stream(mCamera);
-			if (mContext!=null) 
-				stream.setPreferences(PreferenceManager.getDefaultSharedPreferences(mContext));
+			H264Stream stream = new H264Stream(mCamera, mContext);
+			stream.setPreferences(PreferenceManager.getDefaultSharedPreferences(mContext));
 			session.addVideoTrack(stream);
 			break;
 		}
@@ -215,6 +217,8 @@ public class SessionBuilder {
 	 * Sets the SurfaceView required to preview the video stream. 
 	 **/
 	public SessionBuilder setSurfaceView(SurfaceView surfaceView) {
+		Throwable t = new Throwable();
+		Log.e(TAG, "Set session builder suface view: " + surfaceView, t);
 		mSurfaceView = surfaceView;
 		return this;
 	}
